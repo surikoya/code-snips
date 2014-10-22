@@ -1,0 +1,75 @@
+<!doctype html>
+<head>
+<title>Welcome to the Guessing game</title>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script>
+	$(document).ready(function() {
+		$('#guess').focus();
+		var startgame = function() {
+			var newlink = '/game?gamename=guess';	
+			$.ajax({
+				  url: newlink,
+				  type: 'PUT',
+				  success: function(data) {
+					  $('#result').html('');
+					  $('#guess').val('');
+					  $('#guess').focus();
+				  }
+			});			
+		};
+		$('#newgame').click(function(evt) {
+			startgame();
+			evt.preventDefault();
+			return false;			
+		});
+		$('#check').click(function(evt) {
+			var guess = $('#guess').val();
+			var link = '/game?gamename=guess&guess=' + guess;
+			if (guess == null || guess.trim().length === 0) {
+				$('#result').html("<span style='color:red;'>Guess a value.</span>");
+				evt.preventDefault();
+				return;				
+			}
+			if (guess != +guess) {
+				$('#result').html("<span style='color:red;'>Only numbers allowed in guess.</span>");
+				return;
+			}
+			$.ajax({
+				url: link
+			}).done(function(summary) {
+				var data = summary['OUTCOME'];
+				var attempts = +summary['ATTEMPTS']
+				var message = "";
+				if (data === 'Fail') {
+					message = "<span style='color:red;'>Incorrect guess. You have "+ (5 - attempts) +" more attempts to make a guess</span>";
+				} else if (data === 'TooManyFailures') {
+					message = "<span style='color:red;'>Too many failures. The correct number was " + summary['ACTUALNUMBER'] + ".</span>";
+					$('#newgame').focus();
+				} else if (data === 'Success') {
+					message = "<span style='color:green;'>You guessed it right in " + attempts + " attempts.</span>";
+					$('#newgame').focus();
+				}
+				$('#result').html(message);
+			});
+			evt.preventDefault();
+			return false;
+		});	
+
+	});
+</script>
+
+</head>
+<body>
+	<h1>You have five attempts to make a guess</h1>
+	<form id="guessform">
+	
+		<div style="background:gray;color:blue;width:50%; padding:5px;">
+			<label for="guess">Enter a number that is between 0 and 20 inclusive:</label> <input type="number"
+				id="guess" min="0" max="20">
+			<button id="check" >Check Answer!</button>
+			<button id="newgame" >New Game</button>
+		</div>
+		<div id="result" style="width:400px;margin:10px;"></div>
+	</form>
+</body>
+</html>
